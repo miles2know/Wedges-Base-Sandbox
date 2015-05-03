@@ -10,10 +10,14 @@ library(RSQLite)
 library(data.table)
 library(reshape2)
 library(ggplot2)
+
 options(strings.as.factors=FALSE)
 
-install_github("hrbrmstr/streamgraph")
-library(streamgraph)
+if (!requireNamespace('htmlwidgets') || packageVersion('htmlwidgets') <= '0.3.2')
+ devtools::install_github('ramnathv/htmlwidgets')
+# install DT
+if (!require("DT")) devtools::install_github("rstudio/DT")
+sessionInfo()
 
 # Data Preparation ------------------------------------------------------------------------------------------------------
 
@@ -125,17 +129,29 @@ setnames(sGhg, "value", "Ghg")
 # [1] 90  8
 wedgesR <- sGhg[Res == .1 & Com == .1 & Ind == .1 & Trn == .1 & Elc == .1,]
 
+projNghgM
 
+wedgesR[, 6:8, with = FALSE ]
 
+nghgD <- data.frame(Sector = "Non-CO2", projNghgM)
+nghgD <- data.table(Sector = "Non-CO2", Year = projNghgM$Year, Ghg = projNghgM$ghgN)
+
+datList <- list(a = wedgesR[, 6:8, with = FALSE ], b = nghgD)
+
+wedgesR1 <- rbindlist(datList)
+
+lines
 
 
 # wedges plot creation -------------------------------------------------------------------------------------------------
 
-gg <- ggplot(wedgesR, aes(x = Year, y = Ghg, group = Sector)) 
+gg <- ggplot(wedgesR1, aes(x = Year, y = Ghg, group = Sector)) 
 gg <- gg + stat_smooth(mapping = aes(fill = Sector), geom="area", position="stack", method="gam", formula = y~s(x)) 
-gg <- gg + scale_fill_manual(values = colors) 
-gg <- gg + geom_line(data = lines, aes(x = x, y = y),color = "red", size = 1.5)
+gg <- gg + scale_fill_manual(values = colors1) 
+gg <- gg + geom_line(data = lines1, aes(x = x, y = y),color = "red", size = 1.5)
 gg <- gg + geom_hline(yintercept=127, color = "black", size = 1, linetype = 5 )
+gg <- gg + scale_x_continuous(breaks=c(2013,2015,2020,2025,2030))
+gg <- gg + scale_y_continuous(breaks=c(14,38,49,61,92,165))
 
 gg <- gg + labs(x=NULL,y="Million Metric Tons", title = "GHG By Sector")
 gg <- gg + theme_bw() + theme(legend.position="bottom") + guides(fill=guide_legend(title=NULL))
@@ -148,9 +164,14 @@ gg
 
 colors <- c("#6EC400", "#5089E0", "#FF9C01", "#FFE78C", "#657383")
 
+colors1 <- c("#6EC400", "#5089E0", "#FF9C01", "#FFE78C", "#657383", "#0000FF")
+
+
 # how lines was originally created
-lines1 <- ggplot_build(gg)$data[[1]] %>% filter(group == 5) %>% select(x,y) 
+lines1 <- ggplot_build(gg)$data[[1]] %>% filter(group == 6) %>% select(x,y) 
 lines1$Sector <- factor("Total")
+
+yScale <- ggplot_build(gg)$data[[1]] %>% filter(x == 2013) %>% select(y) %>% round(0)
 
 # this is a copy of lines from another environment
 lines <- read.excel()
